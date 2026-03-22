@@ -734,7 +734,7 @@ function processWorkbook(wb){
     if(a==='Grand Totals')break;
     if(a==='Total'&&cm){cm.total=xRow(ws,row);cm=null;continue;}
     if(a.match(/^\d{1,2}$/)&&cm){cm.shifts.push({shift:a,data:xRow(ws,row)});continue;}
-    if(a.match(/^\d{2,}\s+\S/)&&cd&&!a.includes('Totals')){cm={name:a,shifts:[],total:null};cd.machines.push(cm);continue;}
+    if(a.match(/^\d{2,}[\s\-]/)&&cd&&!a.includes('Totals')){cm={name:a,shifts:[],total:null};cd.machines.push(cm);continue;}
   }
   departments.forEach(dept=>{dept.machines.forEach(m=>{
     const d=m.total||(m.shifts.length?m.shifts[0].data:null);
