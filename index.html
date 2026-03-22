@@ -659,7 +659,25 @@ function switchMode(mode){document.getElementById('tabSheets').classList.toggle(
 
 /* ═══ DATA FETCH ═══ */
 function normalizeGsUrl(raw){raw=raw.trim();if(raw.includes('/pub')&&raw.includes('output=xlsx'))return raw;const m=raw.match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=xlsx`;if(/^[a-zA-Z0-9_-]{20,}$/.test(raw))return`https://docs.google.com/spreadsheets/d/${raw}/export?format=xlsx`;return raw;}
-async function fetchXlsx(url){try{const r=await fetch(url,{redirect:'follow'});if(!r.ok)throw new Error(`HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());}catch(e){const r2=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);if(!r2.ok)throw new Error(`Proxy ${r2.status}`);return new Uint8Array(await r2.arrayBuffer());}}
+async function fetchXlsx(url){
+  const proxies=[
+    u=>u,
+    u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ];
+  let lastErr=null;
+  for(const mkUrl of proxies){
+    try{
+      const r=await fetch(mkUrl(url),{redirect:'follow'});
+      if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const buf=new Uint8Array(await r.arrayBuffer());
+      if(buf.length<50||buf[0]!==0x50||buf[1]!==0x4B)throw new Error('Not xlsx');
+      return buf;
+    }catch(e){lastErr=e;}
+  }
+  throw lastErr||new Error('All fetch methods failed');
+}
 
 async function connectGoogleSheets(){
   const raw=document.getElementById('gsUrl').value.trim();
