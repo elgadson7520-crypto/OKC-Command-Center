@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="screen-orientation" content="landscape">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<!-- AUTO-RECOVERY: Reload page every 10 minutes as a fallback safety net -->
+<meta http-equiv="refresh" content="600">
+<title>SupplyOne OKC — Weekly PEFS Command Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#ffffff;--bg2:#f5f6f8;--bg3:#ebeef2;--bg4:#dde1e7;
+  --panel:#ffffff;--panel-border:#c8cdd4;
+  --thunder:#007AC1;--thunder2:#005a8e;--thunder-light:#1a9be0;
+  --orange:#EF6100;--orange-lt:#ff8533;--orange-dk:#c95200;
+  --gold:#FDBB30;--gold-lt:#fdd36a;
+  --navy:#002D62;
+  --green:#0f8a4f;--green-soft:#e8f5ef;
+  --yellow:#c57d06;--yellow-soft:#fef5e0;
+  --red:#c8102e;--red-soft:#fceaed;
+  --text:#1a2332;--text2:#3d4f66;--text3:#6b7a8d;--text4:#9ca3af;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;-webkit-user-select:none;user-select:none;-webkit-transform:translateZ(0);transform:translateZ(0)}
+
+/* ═══ UPLOAD SCREEN ═══ */
+#uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:2.5rem;background:var(--bg)}
+.logo-area{text-align:center}
+.logo-area h1{font-family:'Oswald',sans-serif;font-size:5rem;font-weight:700;letter-spacing:8px;text-transform:uppercase;color:var(--thunder)}
+.logo-area h1 b{color:var(--orange)}
+.logo-area p{font-size:1.5rem;color:var(--text3);margin-top:.5rem;letter-spacing:4px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.logo-area .thunder-accent{display:block;width:120px;height:4px;margin:0.5rem auto 0;background:linear-gradient(90deg,var(--thunder),var(--orange),var(--gold));border-radius:2px}
+.mode-tabs{display:flex;border-radius:10px;overflow:hidden;border:3px solid var(--thunder)}
+.mode-tab{padding:.9rem 3rem;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:var(--bg);color:var(--thunder);border:none}
+.mode-tab.active{background:var(--thunder);color:#fff}
+.gs-panel,.upload-panel{display:none;flex-direction:column;align-items:center;gap:1.2rem;width:min(720px,90vw);padding:2.5rem;background:var(--panel);border-radius:14px;border:2px solid var(--panel-border)}
+.gs-panel.active,.upload-panel.active{display:flex}
+.gs-panel h2{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--thunder);letter-spacing:3px}
+.gs-steps{width:100%;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;color:var(--text2);line-height:1.9}
+.gs-steps ol{padding-left:1.5rem}
+.gs-steps code{background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:.95rem;color:var(--thunder);font-family:monospace}
+.gs-url-row{display:flex;gap:.6rem;width:100%}
+.gs-url-row input{flex:1;padding:.75rem 1rem;border:2px solid var(--bg4);border-radius:8px;font-size:1.05rem;font-family:'Barlow',sans-serif;color:var(--text);background:var(--bg2)}
+.gs-url-row input:focus{outline:none;border-color:var(--thunder)}
+.gs-connect-btn{padding:.75rem 2.5rem;border:none;border-radius:8px;background:var(--thunder);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;cursor:pointer}
+.gs-connect-btn:disabled{opacity:.5;cursor:not-allowed}
+.gs-status{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:600;color:var(--green);display:none;align-items:center;gap:.5rem}
+.gs-status .dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:livePulse 2s ease infinite}
+.gs-status.error{color:var(--red)}.gs-status.error .dot{background:var(--red)}
+.upload-box{border:3px dashed var(--bg4);border-radius:14px;padding:3rem 5rem;text-align:center;cursor:pointer;background:var(--bg2)}
+.upload-box:hover{border-color:var(--thunder)}
+.upload-box svg{width:60px;height:60px;fill:var(--text3);margin-bottom:1rem}
+.upload-box p{font-size:1.3rem;color:var(--text)}
+.upload-box small{color:var(--text3);font-size:1rem}
+#fileInput{display:none}
+.config-panel{display:flex;gap:2rem;align-items:center;font-size:1rem;color:var(--text3);font-family:'Barlow Condensed',sans-serif;flex-wrap:wrap;justify-content:center}
+.config-panel label{display:flex;align-items:center;gap:.5rem}
+.config-panel input[type="number"]{width:65px;padding:6px 8px;border-radius:6px;border:2px solid var(--bg4);background:var(--bg2);color:var(--text);font-size:1rem;text-align:center;font-family:inherit}
+.fullscreen-btn{padding:10px 28px;border-radius:8px;border:none;background:var(--thunder);color:#fff;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700}
+.saved-tag{font-size:.9rem;color:var(--green);font-weight:600;display:none}
+
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:none;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:1.5rem}
+.loading-overlay.active{display:flex}
+.loading-spinner{width:60px;height:60px;border:5px solid var(--bg4);border-top:5px solid var(--thunder);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;color:var(--thunder);font-weight:600;letter-spacing:2px}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD — CASCADE ROTATION SYSTEM
+   65" Samsung TV @ 1920x1080
+   ═══════════════════════════════════════════ */
+#dashboard{display:none;height:100vh;flex-direction:column;background:var(--bg)}
+#dashboard.active{display:flex}
+
+/* HEADER — Thunder gradient */
+.hdr{display:flex;align-items:center;padding:0 2.5vw;height:6vh;flex-shrink:0;background:linear-gradient(90deg,var(--navy) 0%,var(--thunder) 100%);position:relative}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:5px;background:linear-gradient(90deg,var(--orange),var(--gold),var(--orange))}
+.hdr-brand{font-family:'Oswald',sans-serif;font-size:2vw;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#fff}
+.hdr-brand b{color:var(--gold)}
+.hdr-center{flex:1;text-align:center}
+.hdr-title{font-family:'Oswald',sans-serif;font-size:2.4vw;font-weight:700;letter-spacing:5px;color:#fff;text-transform:uppercase}
+.hdr-right{display:flex;align-items:center;gap:2rem;flex-shrink:0}
+.hdr-clock{font-family:'Barlow Condensed',sans-serif;font-size:1.8vw;font-weight:700;color:#fff}
+.hdr-shift{font-family:'Barlow Condensed',sans-serif;font-size:1vw;padding:4px 16px;border-radius:5px;background:rgba(239,97,0,0.6);font-weight:700;color:#fff;letter-spacing:1px}
+
+/* DATE BANNER */
+.date-banner{display:flex;align-items:center;justify-content:center;gap:3vw;padding:.8vh 2vw;flex-shrink:0;background:var(--bg2);border-bottom:3px solid var(--orange)}
+.date-week{font-family:'Oswald',sans-serif;font-size:3.8vw;font-weight:700;letter-spacing:4px;color:var(--thunder);text-transform:uppercase}
+.date-range{font-family:'Barlow Condensed',sans-serif;font-size:2vw;font-weight:700;letter-spacing:3px;color:var(--thunder2)}
+.date-tag{font-family:'Barlow Condensed',sans-serif;font-size:1.1vw;color:var(--text3);background:var(--bg3);padding:5px 18px;border-radius:5px;font-weight:600;letter-spacing:1px}
+
+/* ═══ SLIDE CONTAINER ═══ */
+.slide-area{flex:1;position:relative;overflow:hidden;min-height:0}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;opacity:0;transition:opacity .6s ease;pointer-events:none}
+.slide.active{opacity:1;pointer-events:auto}
+
+/* ── DEPARTMENT BANNER (on machine screens) ── */
+.dept-banner{display:flex;align-items:center;justify-content:center;gap:2vw;padding:.6vh 0;flex-shrink:0;border-bottom:2px solid var(--bg4)}
+.dept-banner.primary{background:linear-gradient(90deg,var(--bg),rgba(0,122,193,0.06),var(--bg))}
+.dept-banner.finishing{background:linear-gradient(90deg,var(--bg),rgba(239,97,0,0.06),var(--bg))}
+.dept-banner-icon{width:3.5vw;height:3.5vw;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:1.6vw;font-weight:700;color:#fff;flex-shrink:0}
+.dept-banner-icon.primary{background:var(--thunder)}
+.dept-banner-icon.finishing{background:var(--orange)}
+.dept-banner-label{font-family:'Oswald',sans-serif;font-size:2.2vw;font-weight:700;letter-spacing:4px;color:var(--thunder);text-transform:uppercase}
+.dept-banner-page{font-family:'Barlow Condensed',sans-serif;font-size:1.3vw;color:var(--text3);font-weight:700;letter-spacing:2px;background:var(--bg3);padding:4px 20px;border-radius:5px}
+
+/* ── MACHINE STACK LAYOUT ── */
+.machine-pair{flex:1;display:flex;flex-direction:column;gap:1.2vh;padding:1vh 2vw;min-height:0}
+.machine-solo{flex:1;display:flex;flex-direction:column;gap:1.2vh;padding:1vh 2vw;min-height:0;justify-content:center}
+
+/* ── BIG MACHINE CARD ── */
+.mc-big{flex:1;background:var(--panel);border-radius:16px;border:3px solid var(--panel-border);
+  display:flex;flex-direction:row;align-items:stretch;
+  padding:1.5vh 1.5vw;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,45,98,0.06);gap:1.5vw}
+.mc-big::before{content:'';position:absolute;top:0;left:0;width:100%;height:6px;border-radius:16px 16px 0 0}
+.mc-big.good::before{background:var(--green)}
+.mc-big.warn::before{background:var(--gold)}
+.mc-big.bad::before{background:var(--red)}
+.mc-big.good{border-color:var(--green)}
+.mc-big.warn{border-color:var(--gold)}
+.mc-big.bad{border-color:var(--red)}
+
+.mc-big-top{display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;width:18vw;gap:.5vh}
+.mc-big-name{font-family:'Oswald',sans-serif;font-size:2.2vw;font-weight:700;letter-spacing:2px;color:var(--thunder);line-height:1.1;text-align:center}
+
+/* OEE RING */
+.oee-ring-big{position:relative;width:8vw;height:8vw;flex-shrink:0}
+.oee-ring-big svg{width:100%;height:100%;transform:rotate(-90deg)}
+.oee-ring-big .ring-bg{fill:none;stroke:var(--bg3);stroke-width:6}
+.oee-ring-big .ring-val{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1.5s ease}
+.oee-ring-inner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.oee-ring-pct{font-family:'Oswald',sans-serif;font-size:2.2vw;font-weight:700;color:var(--text);line-height:1}
+.oee-ring-label{font-family:'Barlow Condensed',sans-serif;font-size:.9vw;font-weight:700;color:var(--text3);letter-spacing:2px;margin-top:.1vh}
+
+/* KPI ROW */
+.mc-big-kpis{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.8vw;min-height:0}
+.kpi-box{background:var(--bg2);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.8vh .5vw;border:2px solid transparent;position:relative}
+.kpi-box.hit{border-color:var(--green);background:var(--green-soft)}
+.kpi-box.miss{border-color:var(--red);background:var(--red-soft)}
+.kpi-box.miss-warn{border-color:var(--gold);background:var(--yellow-soft)}
+.kpi-label{font-family:'Barlow Condensed',sans-serif;font-size:1.2vw;font-weight:700;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.2vh}
+.kpi-val{font-family:'Oswald',sans-serif;font-size:3.2vw;font-weight:700;line-height:1}
+.kpi-val.good{color:var(--green)}
+.kpi-val.bad{color:var(--red)}
+.kpi-val.warn{color:var(--gold)}
+.kpi-val.neutral{color:var(--text)}
+.kpi-target{font-family:'Barlow Condensed',sans-serif;font-size:1vw;font-weight:700;letter-spacing:.5px;margin-top:.3vh}
+.kpi-target.good{color:var(--green)}
+.kpi-target.bad{color:var(--red)}
+.kpi-target.warn{color:var(--gold)}
+.kpi-wow{position:absolute;top:.6vh;right:.6vw;font-family:'Barlow Condensed',sans-serif;font-size:1.1vw;font-weight:700;display:flex;align-items:center;gap:.2rem}
+.kpi-wow.up{color:var(--green)}
+.kpi-wow.down{color:var(--red)}
+.kpi-wow.flat{color:var(--text4)}
+
+/* ═══ MOTIVATIONAL SCREEN — Thunder themed ═══ */
+.motive-slide{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,var(--thunder) 50%,var(--navy) 100%);position:relative;overflow:hidden}
+.motive-slide::before{content:'';position:absolute;top:-20%;right:-10%;width:50vw;height:50vw;border-radius:50%;background:radial-gradient(circle,rgba(239,97,0,0.12) 0%,transparent 70%)}
+.motive-slide::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,transparent 30%,rgba(253,187,48,0.05) 45%,transparent 60%);animation:motiveShine 5s ease infinite}
+@keyframes motiveShine{0%{transform:translateX(-150%)}100%{transform:translateX(250%)}}
+.motive-inner{position:relative;z-index:1;text-align:center;max-width:70vw}
+.motive-emoji{font-size:5vw;margin-bottom:1vh;animation:bounce 2.5s ease infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.motive-quote{font-family:'Oswald',sans-serif;font-size:3.5vw;font-weight:700;color:#fff;letter-spacing:4px;text-transform:uppercase;line-height:1.3;margin-bottom:1vh}
+.motive-sub{font-family:'Barlow Condensed',sans-serif;font-size:1.8vw;color:var(--gold-lt);letter-spacing:2px}
+.motive-machine-callout{margin-top:2vh;padding:1.5vh 2vw;background:rgba(239,97,0,0.15);border:1px solid rgba(239,97,0,0.3);border-radius:12px;display:inline-block}
+.motive-machine-callout .focus-label{font-family:'Barlow Condensed',sans-serif;font-size:1.2vw;color:var(--gold);letter-spacing:2px;margin-bottom:.3vh}
+.motive-machine-callout .focus-msg{font-family:'Oswald',sans-serif;font-size:2vw;color:#fff;font-weight:600;letter-spacing:1px}
+
+/* ═══ RANKING SCREEN ═══ */
+.rank-slide-inner{flex:1;display:flex;flex-direction:column;padding:2vh 4vw;min-height:0}
+.rank-title{font-family:'Oswald',sans-serif;font-size:3vw;font-weight:700;letter-spacing:5px;color:var(--thunder);text-align:center;margin-bottom:1.5vh;text-transform:uppercase}
+.rank-list{flex:1;display:flex;flex-direction:column;gap:1vh}
+.rank-row{display:flex;align-items:center;gap:1.5vw;padding:1.2vh 2vw;border-radius:12px;border:2px solid var(--panel-border);background:var(--panel);flex:1;min-height:0}
+.rank-row.gold{border-color:var(--green);background:var(--green-soft)}
+.rank-pos{font-family:'Oswald',sans-serif;font-size:3vw;font-weight:700;color:var(--thunder);width:4vw;text-align:center;flex-shrink:0}
+.rank-medal{font-size:2.5vw;width:4vw;text-align:center;flex-shrink:0}
+.rank-machine{flex:1;font-family:'Oswald',sans-serif;font-size:2.2vw;font-weight:600;color:var(--thunder);letter-spacing:1px}
+.rank-dept-tag{font-family:'Barlow Condensed',sans-serif;font-size:1vw;color:#fff;padding:3px 14px;border-radius:4px;font-weight:700;letter-spacing:1px;flex-shrink:0}
+.rank-dept-tag.primary{background:var(--thunder)}
+.rank-dept-tag.finishing{background:var(--orange)}
+.rank-oee{font-family:'Oswald',sans-serif;font-size:3vw;font-weight:700;flex-shrink:0;width:8vw;text-align:right}
+.rank-bar-wrap{width:12vw;height:1.5vh;background:var(--bg3);border-radius:6px;overflow:hidden;flex-shrink:0}
+.rank-bar-fill{height:100%;border-radius:6px;transition:width 1s ease}
+
+/* ═══ GOALS SCREEN ═══ */
+.goals-slide-inner{flex:1;display:flex;flex-direction:column;padding:2vh 3vw;min-height:0}
+.goals-title{font-family:'Oswald',sans-serif;font-size:3vw;font-weight:700;letter-spacing:5px;color:var(--thunder);text-align:center;margin-bottom:1.5vh;text-transform:uppercase}
+.goals-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1.2vh 2vw;min-height:0}
+.goal-card{background:var(--panel);border:2px solid var(--panel-border);border-radius:12px;padding:1.2vh 1.5vw;display:flex;flex-direction:column}
+.goal-card-name{font-family:'Oswald',sans-serif;font-size:1.6vw;font-weight:700;color:var(--thunder);letter-spacing:1px;margin-bottom:.8vh}
+.goal-card-rows{flex:1;display:flex;flex-direction:column;gap:.6vh;justify-content:center}
+.goal-r{display:flex;align-items:center;gap:.8vw}
+.goal-r-label{font-family:'Barlow Condensed',sans-serif;font-size:1.2vw;color:var(--text3);width:4vw;font-weight:700;letter-spacing:1px}
+.goal-r-bar{flex:1;height:1.8vh;background:var(--bg3);border-radius:6px;overflow:hidden}
+.goal-r-fill{height:100%;border-radius:6px;transition:width 1.5s ease}
+.goal-r-fill.good{background:var(--green)}.goal-r-fill.warn{background:var(--gold)}.goal-r-fill.bad{background:var(--red)}
+.goal-r-pct{font-family:'Oswald',sans-serif;font-size:1.4vw;font-weight:700;width:4vw;text-align:right}
+
+/* ═══ PLANT SUMMARY SCREEN ═══ */
+.summary-slide-inner{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2vh 4vw}
+.summary-title{font-family:'Oswald',sans-serif;font-size:3vw;font-weight:700;letter-spacing:5px;color:var(--thunder);margin-bottom:2vh;text-transform:uppercase}
+.summary-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:2vw;width:100%;max-width:90vw}
+.summary-kpi{background:var(--panel);border:3px solid var(--panel-border);border-radius:16px;padding:3vh 1vw;text-align:center}
+.summary-kpi.hit{border-color:var(--green);background:var(--green-soft)}
+.summary-kpi.miss{border-color:var(--red);background:var(--red-soft)}
+.summary-kpi-label{font-family:'Barlow Condensed',sans-serif;font-size:1.5vw;font-weight:700;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1vh}
+.summary-kpi-val{font-family:'Oswald',sans-serif;font-size:5vw;font-weight:700;line-height:1}
+.summary-kpi-target{font-family:'Barlow Condensed',sans-serif;font-size:1.2vw;font-weight:700;margin-top:.8vh;letter-spacing:1px}
+.summary-machines{font-family:'Barlow Condensed',sans-serif;font-size:1.5vw;color:var(--text3);margin-top:2vh;letter-spacing:2px}
+
+/* ═══ FOOTER ═══ */
+.ftr{display:flex;align-items:center;justify-content:space-between;padding:0 2.5vw;height:3.5vh;flex-shrink:0;background:var(--panel);border-top:2px solid var(--panel-border)}
+.ftr-targets{display:flex;gap:2.5vw;font-family:'Barlow Condensed',sans-serif;font-size:1vw;color:var(--text3);font-weight:600}
+.ftr-targets span{color:var(--thunder);font-weight:700}
+.ftr-live{font-family:'Barlow Condensed',sans-serif;font-size:.8vw;color:var(--text4);display:flex;align-items:center;gap:.5rem}
+.ftr-live .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);animation:livePulse 2s ease infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.progress-dots{display:flex;align-items:center;gap:8px}
+.pdot{width:10px;height:10px;border-radius:50%;background:var(--bg4);transition:all .4s}
+.pdot.active{background:var(--thunder);transform:scale(1.5);box-shadow:0 0 0 3px rgba(0,122,193,0.2)}
+.pdot.motive{background:var(--orange-lt)}
+.pdot.motive.active{background:var(--orange)}
+.ftr-progress{display:flex;align-items:center;gap:1vw}
+.ftr-progress-bar{width:8vw;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.ftr-progress-fill{height:100%;background:var(--thunder);width:0%;transition:width .1s linear}
+
+/* CONTROLS */
+.ctrl{position:fixed;bottom:12px;right:12px;display:flex;gap:8px;z-index:100;opacity:0;transition:opacity .3s}
+body:hover .ctrl{opacity:1}
+.ctrl button{background:var(--thunder);border:none;color:#fff;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:'Barlow Condensed',sans-serif;font-weight:600}
+.ctrl button:hover{background:var(--orange)}
+
+/* TV KIOSK MODE */
+body.tv-mode{cursor:none}
+body.tv-mode .ctrl{display:none!important}
+body.tv-mode #uploadScreen{display:none!important}
+body.cursor-hidden{cursor:none}
+
+/* Tap-to-start overlay */
+.tap-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;background:linear-gradient(135deg,var(--navy),var(--thunder));display:none;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.tap-overlay.active{display:flex}
+.tap-overlay h2{font-family:'Oswald',sans-serif;font-size:4vw;color:#fff;letter-spacing:6px;text-transform:uppercase;margin-bottom:1vh}
+.tap-overlay p{font-family:'Barlow Condensed',sans-serif;font-size:2vw;color:var(--gold-lt);letter-spacing:3px}
+.tap-overlay .tap-ring{width:10vw;height:10vw;border:4px solid rgba(239,97,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:3vh;animation:tapPulse 2s ease infinite}
+.tap-overlay .tap-ring-inner{font-size:3vw;color:#fff}
+@keyframes tapPulse{0%,100%{transform:scale(1);border-color:rgba(239,97,0,0.4)}50%{transform:scale(1.08);border-color:rgba(239,97,0,0.8)}}
+
+#noSleepVideo{position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1}
+
+/* ═══════════════════════════════════════════
+   BREAK COUNTDOWN OVERLAY
+   Full-screen takeover at scheduled break times
+   ═══════════════════════════════════════════ */
+#breakOverlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#breakOverlay.active{display:flex}
+
+/* Break themes — Thunder-inspired */
+#breakOverlay.break-morning{
+  background:linear-gradient(135deg,#002D62 0%,#004f8a 30%,#007AC1 60%,#004f8a 100%);
+}
+#breakOverlay.break-lunch{
+  background:linear-gradient(135deg,#002D62 0%,#7a3300 30%,#EF6100 60%,#7a3300 100%);
+}
+#breakOverlay.break-afternoon{
+  background:linear-gradient(135deg,#002D62 0%,#8a6d00 30%,#FDBB30 60%,#8a6d00 100%);
+}
+
+/* Ambient floating shapes */
+#breakOverlay .break-bg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:0}
+#breakOverlay .break-bg .shape{position:absolute;border-radius:50%;opacity:0.06;animation:floatShape 20s ease-in-out infinite}
+@keyframes floatShape{
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(30px,-40px) scale(1.1)}
+  50%{transform:translate(-20px,20px) scale(0.95)}
+  75%{transform:translate(15px,30px) scale(1.05)}
+}
+
+/* Current time — top right, large */
+.break-clock{
+  position:absolute;top:3vh;right:4vw;z-index:2;
+  font-family:'Oswald',sans-serif;font-size:5vw;font-weight:700;color:rgba(255,255,255,0.95);
+  letter-spacing:4px;text-shadow:0 4px 30px rgba(0,0,0,0.3);
+}
+.break-clock-seconds{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.8vw;font-weight:600;
+  color:rgba(255,255,255,0.5);letter-spacing:2px;margin-left:.3vw;
+}
+
+/* SupplyOne branding top-left */
+.break-brand{
+  position:absolute;top:3vh;left:4vw;z-index:2;
+  font-family:'Oswald',sans-serif;font-size:2.5vw;font-weight:700;letter-spacing:4px;
+  color:rgba(255,255,255,0.35);text-transform:uppercase;
+}
+.break-brand b{color:rgba(253,187,48,0.5)}
+
+/* Center content */
+.break-center{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2vh}
+
+.break-icon{font-size:10vw;animation:breakPulse 3s ease-in-out infinite;filter:drop-shadow(0 0 40px rgba(255,255,255,0.15))}
+@keyframes breakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+.break-type-label{
+  font-family:'Oswald',sans-serif;font-size:4.5vw;font-weight:700;
+  color:#fff;letter-spacing:8px;text-transform:uppercase;
+  text-shadow:0 4px 30px rgba(0,0,0,0.3);
+}
+.break-message{
+  font-family:'Barlow Condensed',sans-serif;font-size:2vw;font-weight:600;
+  color:rgba(255,255,255,0.7);letter-spacing:3px;text-transform:uppercase;
+  max-width:60vw;line-height:1.5;
+}
+
+/* Countdown timer */
+.break-countdown{display:flex;align-items:center;gap:2vw;margin-top:1vh}
+.break-cd-block{text-align:center}
+.break-cd-num{
+  font-family:'Oswald',sans-serif;font-size:12vw;font-weight:700;
+  color:#fff;line-height:1;letter-spacing:4px;
+  text-shadow:0 0 60px rgba(255,255,255,0.15);
+}
+.break-cd-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.5vw;font-weight:700;
+  color:rgba(255,255,255,0.45);letter-spacing:4px;text-transform:uppercase;
+  margin-top:-.5vh;
+}
+.break-cd-colon{
+  font-family:'Oswald',sans-serif;font-size:10vw;font-weight:700;
+  color:rgba(255,255,255,0.3);line-height:1;margin-top:-1vh;
+  animation:colonBlink 1s ease-in-out infinite;
+}
+@keyframes colonBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Progress bar at bottom */
+.break-progress{
+  position:absolute;bottom:0;left:0;width:100%;height:8px;
+  background:rgba(255,255,255,0.08);z-index:2;
+}
+.break-progress-fill{
+  height:100%;width:0%;transition:width 1s linear;
+  border-radius:0 4px 4px 0;
+}
+.break-morning .break-progress-fill{background:linear-gradient(90deg,#007AC1,#1a9be0)}
+.break-lunch .break-progress-fill{background:linear-gradient(90deg,#EF6100,#ff8533)}
+.break-afternoon .break-progress-fill{background:linear-gradient(90deg,#FDBB30,#fdd36a)}
+
+/* Return countdown text */
+.break-return{
+  position:absolute;bottom:3vh;z-index:2;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.4vw;font-weight:600;
+  color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<video id="noSleepVideo" playsinline muted loop src="data:video/mp4;base64,AAAAIGZ0eXBtcDQyAAAAAG1wNDJpc29tYXZjMQAAAz5tb292AAAAbG12aGQAAAAAAAAAAAAAAAAAA+gAAAPoAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAIYdHJhawAAAFx0a2hkAAAAAwAAAAAAAAAAAAAAAQAAAAAAAAPoAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAIAAAACAAAAAABqG1kaWEAAAAgbWRoZAAAAAAAAAAAAAAAAAA8AAAAPABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABU21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAABNzdGJsAAAAZ3N0c2QAAAAAAAAAAQAAAFdhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAgACABIAAAASAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGP//AAAALWF2Y0MBQAAe/+EAFW5BADAZ7AMIECEAABdgAA8JBYABNYiJhAAAABhzdHRzAAAAAAAAAAEAAAABAAAeAAAAABxzdHNjAAAAAAAAAAEAAAABAAAAAQAAAAEAAAAUc3RzegAAAAAAAAACAAAAEAAAABRzdGNvAAAAAAAAAAEAAAAsAAAAYHVkdGEAAABYbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAsaWxzdAAAACSpdG9vAAAAHGRhdGEAAAABAAAAAExhdmY2MS43LjEwMA=="></video>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Parsing PEFS Data...</div></div>
+
+<div class="tap-overlay" id="tapOverlay">
+  <div class="tap-ring"><div class="tap-ring-inner">&#9654;</div></div>
+  <h2>SUPPLYONE OKC</h2>
+  <p>TAP ANYWHERE TO START DISPLAY</p>
+</div>
+
+<!-- ═══ BREAK COUNTDOWN OVERLAY ═══ -->
+<div id="breakOverlay">
+  <div class="break-bg" id="breakBg"></div>
+  <div class="break-brand">SUPPLY<b>ONE</b></div>
+  <div class="break-clock"><span id="breakClockTime">8:00</span><span class="break-clock-seconds" id="breakClockAMPM">AM</span></div>
+  <div class="break-center">
+    <div class="break-icon" id="breakIcon">&#9749;</div>
+    <div class="break-type-label" id="breakTypeLabel">BREAK TIME</div>
+    <div class="break-message" id="breakMessage">Take a moment to recharge</div>
+    <div class="break-countdown">
+      <div class="break-cd-block"><div class="break-cd-num" id="breakMins">15</div><div class="break-cd-label">MINUTES</div></div>
+      <div class="break-cd-colon">:</div>
+      <div class="break-cd-block"><div class="break-cd-num" id="breakSecs">00</div><div class="break-cd-label">SECONDS</div></div>
+    </div>
+  </div>
+  <div class="break-return" id="breakReturn">DASHBOARD RESUMES AUTOMATICALLY</div>
+  <div class="break-progress"><div class="break-progress-fill" id="breakProgressFill"></div></div>
+</div>
+
+<div id="uploadScreen">
+  <div class="logo-area">
+    <h1>SUPPLY<b>ONE</b></h1>
+    <p>Oklahoma City &mdash; Weekly PEFS Command Center</p>
+    <div class="thunder-accent"></div>
+  </div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('sheets')" id="tabSheets">&#9729; Google Sheets</button>
+    <button class="mode-tab" onclick="switchMode('file')" id="tabFile">&#128193; File Upload</button>
+  </div>
+  <div class="gs-panel active" id="gsPanel">
+    <h2>CONNECT PEFS REPORT</h2>
+    <div class="gs-steps"><ol><li>Open your PEFS report in <b>Google Sheets</b></li><li>Go to <code>File &rarr; Share &rarr; Publish to web</code></li><li>Select <b>"Entire Document"</b> and format <b>".xlsx"</b></li><li>Click <b>Publish</b>, then paste the URL below</li></ol></div>
+    <div class="gs-url-row"><input type="text" id="gsUrl" placeholder="Paste published Google Sheets URL here..."/><button class="gs-connect-btn" id="gsConnectBtn" onclick="connectGoogleSheets()">CONNECT &amp; GO LIVE</button></div>
+    <div class="gs-status" id="gsStatus"><div class="dot"></div><span id="gsStatusText">Connected</span></div>
+    <span class="saved-tag" id="savedTag">&#10003; URL saved</span>
+  </div>
+  <div class="upload-panel" id="filePanel">
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()" id="uploadBox">
+      <svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M8,15.01L10,17L11,16V20H13V16L14,17L16,15L12,11L8,15.01Z"/></svg>
+      <p>Drop or click to upload PEFS spreadsheet</p><small>.xlsx &bull; EnCore PEFS Summary Export</small>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls"/>
+  </div>
+  <div class="config-panel">
+    <label>Poll every <input type="number" id="cfgPoll" value="5" min="1" max="60"> min</label>
+    <button class="fullscreen-btn" onclick="goFullscreen()">&#9974; TV FULLSCREEN</button>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="hdr">
+    <div class="hdr-brand">SUPPLY<b>ONE</b></div>
+    <div class="hdr-center"><div class="hdr-title">WEEKLY PEFS COMMAND CENTER</div></div>
+    <div class="hdr-right"><div class="hdr-shift" id="shiftBadge">1ST SHIFT</div><div class="hdr-clock" id="clock"></div></div>
+  </div>
+  <div class="date-banner">
+    <div class="date-tag" id="dateGenerated"></div>
+    <div class="date-week" id="dateWeekLabel">WEEK OF MARCH 9</div>
+    <div class="date-range" id="dateRange">3/9/2026 — 3/16/2026</div>
+    <div class="date-tag">PREVIOUS WEEK METRICS</div>
+  </div>
+  <div class="slide-area" id="slideArea"></div>
+  <div class="ftr">
+    <div class="ftr-targets"><div>DT: <span>&le;10%</span></div><div>Setup: <span>&le;25 min</span></div><div>Feeds/Run: <span>&ge;1000</span></div><div>Feeds/Sch: <span>&ge;800</span></div></div>
+    <div class="ftr-progress"><div class="progress-dots" id="progressDots"></div><div class="ftr-progress-bar"><div class="ftr-progress-fill" id="progressFill"></div></div></div>
+    <div class="ftr-live" id="ftrLive" style="display:none"><div class="pulse"></div><span id="ftrLiveText">Live</span></div>
+  </div>
+</div>
+<div class="ctrl"><button onclick="goFullscreen()">&#9974;</button><button id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button><button onclick="prevSlide()">&#9664;</button><button onclick="nextSlide()">&#9654;</button><button onclick="returnToConfig()">&#9881;</button></div>
+
+<script>
+const LS_KEY='so_okc_pefs_url';
+const TARGETS={downtime:10,setup:25,feedsRunHr:1000,feedsSchHr:800};
+const Q_GOALS={downtime:8,setup:20,feedsRunHr:1200,feedsSchHr:900};
+const TIMING={machine:15000,motive:8000,rank:12000,goals:12000,summary:12000};
+let gsUrl='',gsPollTimer=null,gsLastHash='',wakeLock=null,parsedData=null;
+let slides=[],curSlide=0,rotateTimer=null,progressTimer=null,isPaused=false;
+
+const QUOTES=[
+  {text:"Thunder up! Every improvement counts.",sub:"Bring the energy every single shift."},
+  {text:"We don't rise to goals — We rise to our standards.",sub:"Push the standard higher every week."},
+  {text:"Downtime is the enemy. Efficiency is the weapon.",sub:"Let's cut waste and maximize output."},
+  {text:"One team. One mission. Zero excuses.",sub:"OKC sets the pace for SupplyOne."},
+  {text:"Small gains compound into massive results.",sub:"Keep chipping away — the numbers will follow."},
+  {text:"The scoreboard doesn't lie.",sub:"Let the data fuel our next breakthrough."},
+  {text:"Champions adjust. Adapt. Overcome.",sub:"Every shift is a chance to improve."},
+  {text:"We are building something great here.",sub:"This week's effort shapes next quarter's win."},
+];
+let quoteIdx=0;
+
+/* ═══════════════════════════════════════════════════════
+   BREAK SCHEDULE SYSTEM
+   8:00 AM  → 15 min morning break
+   11:00 AM → 30 min lunch break
+   2:00 PM  → 15 min afternoon break
+   ═══════════════════════════════════════════════════════ */
+const BREAK_SCHEDULE = [
+  { hour:8,  min:0, duration:15, type:'morning',   icon:'\u2615',  label:'BREAK TIME',         theme:'break-morning',
+    message:'GRAB YOUR COFFEE \u2014 RECHARGE AND RESET',
+    messages:['GRAB YOUR COFFEE \u2014 RECHARGE AND RESET','STRETCH IT OUT, YOU\'VE EARNED IT','HYDRATE, REFUEL, REFOCUS'] },
+  { hour:11, min:0, duration:30, type:'lunch',      icon:'\uD83C\uDF54',  label:'LUNCH BREAK',        theme:'break-lunch',
+    message:'FUEL UP \u2014 YOU\'RE HALFWAY THERE',
+    messages:['FUEL UP \u2014 YOU\'RE HALFWAY THERE','TIME TO EAT \u2014 COME BACK STRONGER','REFUEL AND RECHARGE FOR THE HOME STRETCH'] },
+  { hour:14, min:0, duration:15, type:'afternoon',  icon:'\uD83D\uDCAA',  label:'LAST BREAK',          theme:'break-afternoon',
+    message:'ALMOST THERE \u2014 FINISH THE DAY STRONG!',
+    messages:['ALMOST THERE \u2014 LET\'S FINISH STRONG!','LAST PUSH \u2014 BRING THE ENERGY HOME!','THE FINISH LINE IS IN SIGHT \u2014 STRONG CLOSE!'] },
+];
+
+let breakActive = false;
+let breakEndTime = null;
+let breakTotalMs = 0;
+let breakTickTimer = null;
+let breakConfig = null;
+let lastBreakTriggered = '';
+
+function checkBreakSchedule() {
+  if (breakActive) return;
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const dayKey = now.toDateString();
+
+  for (const b of BREAK_SCHEDULE) {
+    const key = dayKey + '-' + b.hour;
+    if (h === b.hour && m === b.min && now.getSeconds() < 30 && lastBreakTriggered !== key) {
+      lastBreakTriggered = key;
+      startBreak(b);
+      return;
+    }
+    const breakStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), b.hour, b.min, 0).getTime();
+    const breakEndMs = breakStartMs + b.duration * 60000;
+    const nowMs = now.getTime();
+    if (nowMs >= breakStartMs && nowMs < breakEndMs && lastBreakTriggered !== key) {
+      lastBreakTriggered = key;
+      const remaining = breakEndMs - nowMs;
+      startBreak(b, remaining);
+      return;
+    }
+  }
+}
+
+function startBreak(config, remainingMs) {
+  breakActive = true;
+  breakConfig = config;
+  breakTotalMs = remainingMs || config.duration * 60000;
+  breakEndTime = Date.now() + breakTotalMs;
+  clearTimers();
+
+  const overlay = document.getElementById('breakOverlay');
+  overlay.className = 'active ' + config.theme;
+
+  const msg = config.messages[Math.floor(Math.random() * config.messages.length)];
+  document.getElementById('breakIcon').textContent = config.icon;
+  document.getElementById('breakTypeLabel').textContent = config.label;
+  document.getElementById('breakMessage').textContent = msg;
+
+  const bg = document.getElementById('breakBg');
+  bg.innerHTML = '';
+  const colors = config.type === 'morning' ? ['#007AC1','#1a9be0','#60c8ff'] :
+                 config.type === 'lunch'   ? ['#EF6100','#ff8533','#ffad66'] :
+                                             ['#FDBB30','#fdd36a','#ffe599'];
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'shape';
+    const size = 15 + Math.random() * 25;
+    s.style.cssText = `width:${size}vw;height:${size}vw;background:${colors[i%3]};top:${Math.random()*80}%;left:${Math.random()*80}%;animation-delay:${-Math.random()*20}s;animation-duration:${15+Math.random()*15}s`;
+    bg.appendChild(s);
+  }
+
+  breakTickTimer = setInterval(tickBreak, 250);
+  tickBreak();
+}
+
+function tickBreak() {
+  const now = Date.now();
+  const remaining = Math.max(0, breakEndTime - now);
+  const d = new Date();
+  const h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+  document.getElementById('breakClockTime').textContent = `${h % 12 || 12}:${String(m).padStart(2,'0')}`;
+  document.getElementById('breakClockAMPM').textContent = `:${String(s).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+
+  const totalSec = Math.ceil(remaining / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  document.getElementById('breakMins').textContent = String(mins).padStart(2, '0');
+  document.getElementById('breakSecs').textContent = String(secs).padStart(2, '0');
+
+  const elapsed = breakTotalMs - remaining;
+  const pct = Math.min(100, (elapsed / breakTotalMs) * 100);
+  document.getElementById('breakProgressFill').style.width = pct + '%';
+
+  if (remaining < 60000) {
+    document.getElementById('breakReturn').textContent = 'RETURNING TO DASHBOARD IN ' + totalSec + 's...';
+  } else {
+    document.getElementById('breakReturn').textContent = 'DASHBOARD RESUMES AUTOMATICALLY';
+  }
+  if (remaining <= 0) endBreak();
+}
+
+function endBreak() {
+  breakActive = false;
+  clearInterval(breakTickTimer);
+  document.getElementById('breakOverlay').className = '';
+  if (slides.length && !isPaused) startRotation();
+}
+setInterval(checkBreakSchedule, 1000);
+
+/* ═══ SAMSUNG TV SLEEP PREVENTION ═══ */
+async function requestWakeLock(){try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>setTimeout(requestWakeLock,1000));}}catch(e){}}
+function startNoSleepVideo(){const v=document.getElementById('noSleepVideo');if(!v)return;const p=()=>v.play().catch(()=>{});p();setInterval(p,30000);document.addEventListener('click',p);document.addEventListener('touchstart',p);}
+function startActivityPing(){setInterval(()=>{document.title=document.title.endsWith(' ')?document.title.trimEnd():document.title+' ';document.body.style.willChange='auto';requestAnimationFrame(()=>{document.body.style.willChange='';});},25000);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){requestWakeLock();startNoSleepVideo();}});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+function initSleep(){requestWakeLock();startNoSleepVideo();startActivityPing();}
+
+/* ═══════════════════════════════════════════════════════
+   AUTO-RECOVERY SYSTEM
+   ═══════════════════════════════════════════════════════ */
+let connectionRetries = 0;
+const MAX_RETRIES = 50;
+const BASE_RETRY_MS = 3000;
+
+async function connectWithRetry() {
+  const raw = document.getElementById('gsUrl').value.trim();
+  if (!raw) return;
+  gsUrl = normalizeGsUrl(raw);
+  showLoading('Connecting to PEFS Data...');
+
+  while (connectionRetries < MAX_RETRIES) {
+    try {
+      const data = await fetchXlsx(gsUrl);
+      processWorkbook(XLSX.read(data, {type:'array'}));
+      localStorage.setItem(LS_KEY, raw);
+      document.getElementById('ftrLive').style.display = 'flex';
+      hideLoading();
+      initSleep();
+      connectionRetries = 0;
+      startGsPolling();
+      setTimeout(() => {
+        try {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } catch(e){}
+      }, 1000);
+      return;
+    } catch (err) {
+      connectionRetries++;
+      const delay = Math.min(BASE_RETRY_MS * Math.pow(1.5, connectionRetries), 60000);
+      document.getElementById('loadingText').textContent =
+        `Connection failed \u2014 retrying in ${Math.round(delay/1000)}s (attempt ${connectionRetries}/${MAX_RETRIES})`;
+      await new Promise(r => setTimeout(r, delay));
+      document.getElementById('loadingText').textContent = 'Reconnecting to PEFS Data...';
+    }
+  }
+  document.getElementById('loadingText').textContent = 'Reloading page...';
+  setTimeout(() => location.reload(), 3000);
+}
+
+window.addEventListener('online', () => {
+  if (parsedData && gsUrl) { refreshGS(); } else { connectionRetries = 0; connectWithRetry(); }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    requestWakeLock();
+    startNoSleepVideo();
+    if (!parsedData && document.getElementById('gsUrl').value.trim()) { connectionRetries = 0; connectWithRetry(); }
+    else if (parsedData && gsUrl) { refreshGS(); }
+  }
+});
+
+setInterval(() => {
+  const dashActive = document.getElementById('dashboard').classList.contains('active');
+  if (!dashActive && document.getElementById('gsUrl').value.trim() && isTvMode) { connectionRetries = 0; connectWithRetry(); }
+}, 30000);
+
+
+function updateClock(){const now=new Date(),h=now.getHours(),m=now.getMinutes();document.getElementById('clock').textContent=`${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;let s='1ST SHIFT';if(h>=14&&h<22)s='2ND SHIFT';else if(h>=22||h<6)s='3RD SHIFT';document.getElementById('shiftBadge').textContent=s;}
+setInterval(updateClock,10000);updateClock();
+function switchMode(mode){document.getElementById('tabSheets').classList.toggle('active',mode==='sheets');document.getElementById('tabFile').classList.toggle('active',mode==='file');document.getElementById('gsPanel').classList.toggle('active',mode==='sheets');document.getElementById('filePanel').classList.toggle('active',mode==='file');}
+
+/* ═══ DATA FETCH ═══ */
+function normalizeGsUrl(raw){raw=raw.trim();if(raw.includes('/pub')&&raw.includes('output=xlsx'))return raw;const m=raw.match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=xlsx`;if(/^[a-zA-Z0-9_-]{20,}$/.test(raw))return`https://docs.google.com/spreadsheets/d/${raw}/export?format=xlsx`;return raw;}
+async function fetchXlsx(url){try{const r=await fetch(url,{redirect:'follow'});if(!r.ok)throw new Error(`HTTP ${r.status}`);return new Uint8Array(await r.arrayBuffer());}catch(e){const r2=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);if(!r2.ok)throw new Error(`Proxy ${r2.status}`);return new Uint8Array(await r2.arrayBuffer());}}
+
+async function connectGoogleSheets(){
+  const raw=document.getElementById('gsUrl').value.trim();
+  if(!raw)return;
+  gsUrl=normalizeGsUrl(raw);
+  const btn=document.getElementById('gsConnectBtn'),st=document.getElementById('gsStatus');
+  btn.disabled=true;btn.textContent='CONNECTING...';
+  showLoading('Fetching PEFS...');
+  try{
+    const data=await fetchXlsx(gsUrl);
+    processWorkbook(XLSX.read(data,{type:'array'}));
+    localStorage.setItem(LS_KEY,raw);
+    document.getElementById('savedTag').style.display='inline';
+    st.style.display='flex';st.classList.remove('error');
+    document.getElementById('gsStatusText').textContent='Connected';
+    startGsPolling();
+    document.getElementById('ftrLive').style.display='flex';
+    hideLoading();initSleep();
+  }catch(err){
+    hideLoading();st.style.display='flex';st.classList.add('error');
+    document.getElementById('gsStatusText').textContent='Failed \u2014 '+err.message;
+  }
+  btn.disabled=false;btn.textContent='CONNECT & GO LIVE';
+}
+
+function startGsPolling(){if(gsPollTimer)clearInterval(gsPollTimer);const m=parseInt(document.getElementById('cfgPoll').value||5);gsPollTimer=setInterval(()=>refreshGS(),m*60000);}
+async function refreshGS(){if(!gsUrl)return;try{const d=await fetchXlsx(gsUrl);const h=simpleHash(d);if(h===gsLastHash)return;gsLastHash=h;processWorkbook(XLSX.read(d,{type:'array'}));}catch(e){}}
+function simpleHash(a){let h=0;const s=Math.max(1,Math.floor(a.length/500));for(let i=0;i<a.length;i+=s)h=((h<<5)-h+a[i])|0;return h.toString(36);}
+
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+const ubox=document.getElementById('uploadBox');
+ubox.addEventListener('dragover',e=>{e.preventDefault();ubox.style.borderColor='var(--thunder)';});
+ubox.addEventListener('dragleave',()=>ubox.style.borderColor='');
+ubox.addEventListener('drop',e=>{e.preventDefault();ubox.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+function loadFile(file){showLoading('Parsing PEFS...');const r=new FileReader();r.onload=evt=>{processWorkbook(XLSX.read(new Uint8Array(evt.target.result),{type:'array'}));hideLoading();initSleep();};r.readAsArrayBuffer(file);}
+
+function cellNum(ws,r,c){const a=XLSX.utils.encode_cell({r:r-1,c:c-1});const cl=ws[a];return cl&&typeof cl.v==='number'?cl.v:0;}
+function cellStr(ws,r,c){const a=XLSX.utils.encode_cell({r:r-1,c:c-1});const cl=ws[a];return cl&&cl.v!=null?String(cl.v).trim():'';}
+function showLoading(m){document.getElementById('loadingText').textContent=m;document.getElementById('loadingOverlay').classList.add('active');}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
+function goFullscreen(){const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el);requestWakeLock();}
+function returnToConfig(){clearTimers();if(gsPollTimer)clearInterval(gsPollTimer);document.getElementById('dashboard').classList.remove('active');document.getElementById('uploadScreen').style.display='flex';}
+
+/* ═══ PARSE PEFS ═══ */
+function processWorkbook(wb){
+  let sn=wb.SheetNames[0];for(const n of wb.SheetNames){if(n.toLowerCase().includes('pefs')){sn=n;break;}}
+  const ws=wb.Sheets[sn],dateGenStr=cellStr(ws,2,1),dateRangeStr=cellStr(ws,2,11);
+  const departments=[];let cd=null,cm=null;
+  const maxR=ws['!ref']?XLSX.utils.decode_range(ws['!ref']).e.r+1:60;
+  for(let row=1;row<=maxR;row++){
+    const a=cellStr(ws,row,1);if(!a)continue;
+    if(a.includes('Department')&&!a.includes('Totals')){cd={name:a,machines:[],totals:null};departments.push(cd);cm=null;continue;}
+    if(a.includes('Totals:')&&cd){cd.totals=xRow(ws,row+1);cm=null;continue;}
+    if(a==='Grand Totals')break;
+    if(a==='Total'&&cm){cm.total=xRow(ws,row);cm=null;continue;}
+    if(a.match(/^\d{1,2}$/)&&cm){cm.shifts.push({shift:a,data:xRow(ws,row)});continue;}
+    if(a.match(/^\d{2,}\s+\S/)&&cd&&!a.includes('Totals')){cm={name:a,shifts:[],total:null};cd.machines.push(cm);continue;}
+  }
+  departments.forEach(dept=>{dept.machines.forEach(m=>{
+    const d=m.total||(m.shifts.length?m.shifts[0].data:null);
+    if(!d){m.kpis=null;return;}
+    const downtime=d.downtimePctNew||0;
+    const setup=d.minPerSetup||0;
+    const feedsRunHr=d.feedsRunHr||0;
+    const feedsSchHr=d.feedsSchHr||0;
+    let status='good';
+    if(downtime>TARGETS.downtime||setup>TARGETS.setup||feedsRunHr<TARGETS.feedsRunHr*0.85||feedsSchHr<TARGETS.feedsSchHr*0.85)status='warn';
+    if(downtime>15||setup>35||feedsRunHr<TARGETS.feedsRunHr*0.7||feedsSchHr<TARGETS.feedsSchHr*0.7)status='bad';
+    m.kpis={downtime:r1(downtime),setup:r1(setup),feedsRunHr:r1(feedsRunHr),feedsSchHr:r1(feedsSchHr),status,prodQty:d.prodQty||0,setups:d.setups||0};
+    m.dept=dept.name;
+  });});
+  parsedData={departments,dateGenStr,dateRangeStr};
+  buildSlides();renderDashboard();
+}
+
+function xRow(ws,row){
+  var prodQty=cellNum(ws,row,4),msq=cellNum(ws,row,5),setups=cellNum(ws,row,6),rate=cellNum(ws,row,7),waste=cellNum(ws,row,8),stdSetup=cellNum(ws,row,9),stdRun=cellNum(ws,row,10),setupHrs=cellNum(ws,row,12),runHrs=cellNum(ws,row,13),downOn=cellNum(ws,row,14),downOff=cellNum(ws,row,15),actHrs=cellNum(ws,row,16),downPct=cellNum(ws,row,17),util=cellNum(ws,row,18),setupEff=cellNum(ws,row,19),runEff=cellNum(ws,row,20),totalEff=cellNum(ws,row,21);
+  var minPerSetup=(setups>0&&setupHrs>0)?(setupHrs*60)/setups:0;
+  var feedsRunHr=(runHrs>0)?prodQty/runHrs:0;
+  var feedsSchHr=(actHrs>0)?prodQty/actHrs:0;
+  var downtimePctNew=(actHrs>0)?((downOn+downOff)/actHrs)*100:0;
+  var aeVal=cellNum(ws,row,31),afVal=cellNum(ws,row,32),agVal=cellNum(ws,row,33),ahVal=cellNum(ws,row,34);
+  if(aeVal>0)minPerSetup=aeVal;if(afVal>0)feedsRunHr=afVal;if(agVal>0)feedsSchHr=agVal;if(ahVal>0)downtimePctNew=(ahVal>1)?ahVal:ahVal*100;
+  return{prodQty,msq,setups,rate,waste,stdSetup,stdRun,setupHrs,runHrs,downOn,downOff,actHrs,downPct,util,setupEff,runEff,totalEff,minPerSetup,feedsRunHr,feedsSchHr,downtimePctNew};
+}
+function r1(v){return Math.round(v*10)/10;}
+
+/* ═══ BUILD SLIDE SEQUENCE ═══ */
+function buildSlides(){
+  slides=[];if(!parsedData)return;
+  const depts=[...parsedData.departments].sort((a,b)=>{const aP=a.name.toLowerCase().includes('primary')?0:1;const bP=b.name.toLowerCase().includes('primary')?0:1;return aP-bP;});
+  const allM=[];depts.forEach(d=>d.machines.forEach(m=>{if(m.kpis)allM.push(m);}));
+  const worstM=allM.length?allM.reduce((a,b)=>{const aS=a.kpis.downtime+a.kpis.setup/25;const bS=b.kpis.downtime+b.kpis.setup/25;return aS>bS?a:b;}):null;
+  depts.forEach(dept=>{
+    const machines=dept.machines.filter(m=>m.kpis);
+    const isPrimary=dept.name.toLowerCase().includes('primary');
+    const pairs=[];for(let i=0;i<machines.length;i+=2)pairs.push(machines.slice(i,i+2));
+    pairs.forEach((pair,pi)=>{
+      slides.push({type:'machines',machines:pair,dept:dept.name,isPrimary,page:pi+1,totalPages:pairs.length,duration:TIMING.machine});
+      slides.push({type:'motive',duration:TIMING.motive,worstM});
+    });
+  });
+  slides.push({type:'summary',duration:TIMING.summary});
+  slides.push({type:'ranking',duration:TIMING.rank});
+  slides.push({type:'goals',duration:TIMING.goals});
+}
+
+/* ═══ RENDER DASHBOARD ═══ */
+function renderDashboard(){
+  const d=parsedData;
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('dashboard').classList.add('active');
+  document.getElementById('dateGenerated').textContent='Report: '+d.dateGenStr;
+  if(d.dateRangeStr){const p=d.dateRangeStr.split(' to ');if(p.length===2){document.getElementById('dateRange').textContent=p[0].trim()+' \u2014 '+p[1].trim();try{const dp=p[0].trim().split('/');const dt=new Date(dp[2],dp[0]-1,dp[1]);const mo=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];document.getElementById('dateWeekLabel').textContent='WEEK OF '+mo[dt.getMonth()]+' '+dt.getDate();}catch(e){}}}
+  const area=document.getElementById('slideArea');area.innerHTML='';
+  slides.forEach((s,i)=>{
+    const div=document.createElement('div');div.className='slide';div.id='slide-'+i;
+    if(s.type==='machines') div.innerHTML=renderMachineSlide(s);
+    else if(s.type==='motive') div.innerHTML=renderMotiveSlide(s);
+    else if(s.type==='summary') div.innerHTML=renderSummarySlide();
+    else if(s.type==='ranking') div.innerHTML=renderRankingSlide();
+    else if(s.type==='goals') div.innerHTML=renderGoalsSlide();
+    area.appendChild(div);
+  });
+  const dots=document.getElementById('progressDots');dots.innerHTML='';
+  slides.forEach((s,i)=>{const d=document.createElement('div');d.className='pdot'+(s.type==='motive'?' motive':'');d.onclick=()=>goToSlide(i);dots.appendChild(d);});
+  curSlide=0;showSlide(0);startRotation();
+  if(isTvMode)setTimeout(enterTvMode,600);
+}
+
+/* ═══ MACHINE PAIR SLIDE ═══ */
+function renderMachineSlide(s){
+  const cls=s.isPrimary?'primary':'finishing';const icon=s.isPrimary?'P':'F';
+  const deptName=s.dept.replace(' Department','').toUpperCase();
+  let html=`<div class="dept-banner ${cls}"><div class="dept-banner-icon ${cls}">${icon}</div><div class="dept-banner-label">${deptName}</div><div class="dept-banner-page">${s.page} OF ${s.totalPages}</div></div>`;
+  const isSolo=s.machines.length===1;
+  html+=`<div class="${isSolo?'machine-solo':'machine-pair'}">`;
+  s.machines.forEach(m=>{
+    const k=m.kpis;let statusCls=k.status||'warn';
+    const dtScore=Math.max(0,100-(k.downtime/TARGETS.downtime*100));
+    const setupScore=Math.max(0,100-(k.setup/TARGETS.setup*100));
+    const feedsRunScore=Math.min(100,(k.feedsRunHr/TARGETS.feedsRunHr*100));
+    const feedsSchScore=Math.min(100,(k.feedsSchHr/TARGETS.feedsSchHr*100));
+    const healthScore=r1((dtScore+setupScore+feedsRunScore+feedsSchScore)/4);
+    const circ=2*Math.PI*20,hcl=Math.min(healthScore,100),dOff=circ-(hcl/100)*circ;
+    const rC=healthScore>=85?'var(--green)':healthScore>=65?'var(--gold)':'var(--red)';
+    const kpis=[
+      {label:'DOWNTIME',val:k.downtime+'%',cls:k.downtime<=TARGETS.downtime?'hit':k.downtime<=15?'miss-warn':'miss',vc:k.downtime<=TARGETS.downtime?'good':k.downtime<=15?'warn':'bad',tag:k.downtime<=TARGETS.downtime?'\u2713 ON TARGET':'\u25B2 HIGH'},
+      {label:'SETUP (MIN)',val:k.setup,cls:k.setup<=TARGETS.setup?'hit':k.setup<=35?'miss-warn':'miss',vc:k.setup<=TARGETS.setup?'good':k.setup<=35?'warn':'bad',tag:k.setup<=TARGETS.setup?'\u2713 ON TARGET':'\u25B2 HIGH'},
+      {label:'FEEDS/RUN HR',val:Math.round(k.feedsRunHr),cls:k.feedsRunHr>=TARGETS.feedsRunHr?'hit':'miss',vc:k.feedsRunHr>=TARGETS.feedsRunHr?'good':'bad',tag:k.feedsRunHr>=TARGETS.feedsRunHr?'\u2713 ON TARGET':'\u25BC LOW'},
+      {label:'FEEDS/SCH HR',val:Math.round(k.feedsSchHr),cls:k.feedsSchHr>=TARGETS.feedsSchHr?'hit':'miss',vc:k.feedsSchHr>=TARGETS.feedsSchHr?'good':'bad',tag:k.feedsSchHr>=TARGETS.feedsSchHr?'\u2713 ON TARGET':'\u25BC LOW'},
+    ];
+    html+=`<div class="mc-big ${statusCls}"><div class="mc-big-top"><div class="mc-big-name">${m.name}</div><div class="oee-ring-big"><svg viewBox="0 0 48 48"><circle class="ring-bg" cx="24" cy="24" r="20"/><circle class="ring-val" cx="24" cy="24" r="20" stroke="${rC}" stroke-dasharray="${circ}" stroke-dashoffset="${dOff}"/></svg><div class="oee-ring-inner"><div class="oee-ring-pct">${healthScore}%</div><div class="oee-ring-label">HEALTH</div></div></div></div><div class="mc-big-kpis">${kpis.map(kp=>`<div class="kpi-box ${kp.cls}"><div class="kpi-wow flat">\u2014</div><div class="kpi-label">${kp.label}</div><div class="kpi-val ${kp.vc}">${kp.val}</div><div class="kpi-target ${kp.vc}">${kp.tag}</div></div>`).join('')}</div></div>`;
+  });
+  html+=`</div>`;return html;
+}
+
+/* ═══ MOTIVATIONAL SLIDE ═══ */
+function renderMotiveSlide(s){
+  const q=QUOTES[quoteIdx%QUOTES.length];quoteIdx++;
+  const allM=[];parsedData.departments.forEach(d=>d.machines.forEach(m=>{if(m.kpis)allM.push(m);}));
+  const good=allM.filter(m=>m.kpis.downtime<=TARGETS.downtime&&m.kpis.setup<=TARGETS.setup).length,tot=allM.length;
+  const emo=good>=tot*0.7?'\uD83D\uDD25':good>=tot*0.4?'\uD83D\uDCAA':'\u26A1';
+  let callout='';
+  if(s.worstM&&s.worstM.kpis){const w=s.worstM,dtGap=TARGETS.downtime-w.kpis.downtime,setupGap=TARGETS.setup-w.kpis.setup;const focus=dtGap<setupGap?`Downtime at ${w.kpis.downtime}% (target ${TARGETS.downtime}%)`:`Setup at ${w.kpis.setup}min (target ${TARGETS.setup}min)`;callout=`<div class="motive-machine-callout"><div class="focus-label">FOCUS MACHINE THIS WEEK</div><div class="focus-msg">${w.name}: ${focus}</div></div>`;}
+  return `<div class="motive-slide"><div class="motive-inner"><div class="motive-emoji">${emo}</div><div class="motive-quote">${q.text}</div><div class="motive-sub">${q.sub}</div>${callout}</div></div>`;
+}
+
+/* ═══ PLANT SUMMARY SLIDE ═══ */
+function renderSummarySlide(){
+  const allM=[];parsedData.departments.forEach(d=>d.machines.forEach(m=>{if(m.kpis)allM.push(m);}));
+  if(!allM.length)return'<div class="summary-slide-inner"><div class="summary-title">NO DATA</div></div>';
+  const avg=(arr)=>r1(arr.reduce((a,b)=>a+b,0)/arr.length);
+  const dt=avg(allM.map(m=>m.kpis.downtime)),setup=avg(allM.map(m=>m.kpis.setup)),feedsRun=avg(allM.map(m=>m.kpis.feedsRunHr)),feedsSch=avg(allM.map(m=>m.kpis.feedsSchHr));
+  const kpis=[
+    {label:'DOWNTIME',val:dt+'%',hit:dt<=TARGETS.downtime,vc:dt<=TARGETS.downtime?'good':'bad',tag:`Target: \u2264${TARGETS.downtime}%`},
+    {label:'SETUP',val:r1(setup)+'m',hit:setup<=TARGETS.setup,vc:setup<=TARGETS.setup?'good':'bad',tag:`Target: \u2264${TARGETS.setup}m`},
+    {label:'FEEDS/RUN',val:Math.round(feedsRun),hit:feedsRun>=TARGETS.feedsRunHr,vc:feedsRun>=TARGETS.feedsRunHr?'good':'bad',tag:`Target: \u2265${TARGETS.feedsRunHr}`},
+    {label:'FEEDS/SCH',val:Math.round(feedsSch),hit:feedsSch>=TARGETS.feedsSchHr,vc:feedsSch>=TARGETS.feedsSchHr?'good':'bad',tag:`Target: \u2265${TARGETS.feedsSchHr}`},
+    {label:'MACHINES',val:allM.length,hit:true,vc:'neutral',tag:'Reporting'},
+  ];
+  const good=allM.filter(m=>m.kpis.downtime<=TARGETS.downtime&&m.kpis.setup<=TARGETS.setup).length;
+  return `<div class="summary-slide-inner"><div class="summary-title">OKC PLANT \u2014 WEEKLY SUMMARY</div><div class="summary-kpis">${kpis.map(k=>`<div class="summary-kpi ${k.hit?'hit':'miss'}"><div class="summary-kpi-label">${k.label}</div><div class="summary-kpi-val" style="color:var(--${k.vc})">${k.val}</div><div class="summary-kpi-target" style="color:var(--${k.vc})">${k.tag}</div></div>`).join('')}</div><div class="summary-machines">${good} OF ${allM.length} MACHINES ON TARGET &nbsp;&bull;&nbsp; ${allM.length} MACHINES REPORTING</div></div>`;
+}
+
+/* ═══ RANKING SLIDE ═══ */
+function renderRankingSlide(){
+  const allM=[];parsedData.departments.forEach(d=>d.machines.forEach(m=>{if(m.kpis)allM.push(m);}));
+  allM.sort((a,b)=>{const aS=a.kpis.downtime+a.kpis.setup/25;const bS=b.kpis.downtime+b.kpis.setup/25;return aS-bS;});
+  const medals=['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
+  return `<div class="rank-slide-inner"><div class="rank-title">MACHINE PERFORMANCE RANKING</div><div class="rank-list">${allM.map((m,i)=>{const k=m.kpis;const score=r1(((100-(k.downtime/TARGETS.downtime*100))+(100-(k.setup/TARGETS.setup*100)))/2);const color=score>=85?'var(--green)':score>=65?'var(--gold)':'var(--red)';const isPrimary=m.dept.toLowerCase().includes('primary');return`<div class="rank-row ${i===0?'gold':''}"><div class="${i<3?'rank-medal':'rank-pos'}">${i<3?medals[i]:(i+1)}</div><div class="rank-machine">${m.name}</div><div class="rank-dept-tag ${isPrimary?'primary':'finishing'}">${isPrimary?'PRIMARY':'FINISHING'}</div><div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${Math.min(score,100)}%;background:${color}"></div></div><div class="rank-oee" style="color:${color}">${score}%</div></div>`;}).join('')}</div></div>`;
+}
+
+/* ═══ GOALS SLIDE ═══ */
+function renderGoalsSlide(){
+  const allM=[];parsedData.departments.forEach(d=>d.machines.forEach(m=>{if(m.kpis)allM.push(m);}));
+  allM.sort((a,b)=>{const aP=a.dept.toLowerCase().includes('primary')?0:1;const bP=b.dept.toLowerCase().includes('primary')?0:1;return aP-bP;});
+  return `<div class="goals-slide-inner"><div class="goals-title">Q1 2026 \u2014 QUARTER GOALS PROGRESS</div><div class="goals-grid">${allM.map(m=>{const k=m.kpis;const goals=[{label:'DT%',current:k.downtime,target:Q_GOALS.downtime,inv:true},{label:'SETUP',current:k.setup,target:Q_GOALS.setup,inv:true},{label:'FEEDS/RUN',current:k.feedsRunHr,target:Q_GOALS.feedsRunHr,inv:false},{label:'FEEDS/SCH',current:k.feedsSchHr,target:Q_GOALS.feedsSchHr,inv:false}];return`<div class="goal-card"><div class="goal-card-name">${m.name}</div><div class="goal-card-rows">${goals.map(g=>{let pct;if(g.inv){pct=g.current<=g.target?100:Math.max(0,Math.round((1-(g.current-g.target)/g.target)*100));}else{pct=g.target>0?Math.min(100,Math.round((g.current/g.target)*100)):0;}const cls=pct>=95?'good':pct>=70?'warn':'bad';return`<div class="goal-r"><div class="goal-r-label">${g.label}</div><div class="goal-r-bar"><div class="goal-r-fill ${cls}" style="width:${pct}%"></div></div><div class="goal-r-pct" style="color:var(--${cls})">${pct}%</div></div>`;}).join('')}</div></div>`;}).join('')}</div></div>`;
+}
+
+/* ═══ SLIDE ROTATION ENGINE ═══ */
+function showSlide(idx){curSlide=idx;document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active',i===idx));document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('active',i===idx));}
+function goToSlide(i){clearTimers();showSlide(i);startRotation();}
+function nextSlide(){clearTimers();curSlide=(curSlide+1)%slides.length;showSlide(curSlide);startRotation();}
+function prevSlide(){clearTimers();curSlide=(curSlide-1+slides.length)%slides.length;showSlide(curSlide);startRotation();}
+function startRotation(){
+  clearTimers();if(isPaused||!slides.length||breakActive)return;
+  const dur=slides[curSlide].duration;let elapsed=0;const fill=document.getElementById('progressFill');
+  progressTimer=setInterval(()=>{elapsed+=100;fill.style.width=(elapsed/dur*100)+'%';},100);
+  rotateTimer=setTimeout(nextSlide,dur);
+}
+function clearTimers(){clearTimeout(rotateTimer);clearInterval(progressTimer);document.getElementById('progressFill').style.width='0%';}
+function togglePause(){isPaused=!isPaused;document.getElementById('pauseBtn').innerHTML=isPaused?'\u25B6':'\u23F8';isPaused?clearTimers():startRotation();}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextSlide();else if(e.key==='ArrowLeft')prevSlide();else if(e.key===' '){e.preventDefault();togglePause();}});
+
+/* ═══ AUTO INIT — FOR OKC TV ═══ */
+const HARDCODED_GS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT2L5q2h5_qpmMd5q8bB2YqVnwADwWjlVasiQ6CuCvIzmMLXaXlLMhllPAzaa00ay7Bfh-MJ705SgZn/pub?output=xlsx';
+let isTvMode = false;
+(function(){
+  const params = new URLSearchParams(location.search);
+  const gsParam = params.get('gs');
+  const urlToUse = gsParam || localStorage.getItem(LS_KEY) || HARDCODED_GS_URL;
+  if(urlToUse) document.getElementById('gsUrl').value = urlToUse;
+
+  const autostart = params.get('autostart') === '1' || (!gsParam && urlToUse === HARDCODED_GS_URL) || localStorage.getItem(LS_KEY);
+  if(urlToUse && autostart){
+    isTvMode = true;
+    document.getElementById('uploadScreen').style.display='none';
+    setTimeout(() => connectWithRetry(), 300);
+  } else if(urlToUse){
+    document.getElementById('savedTag').style.display='inline';
+  }
+})();
+
+/* ═══ TV DISPLAY MODE ═══ */
+function enterTvMode(){
+  document.body.classList.add('tv-mode');
+  const overlay = document.getElementById('tapOverlay');
+  overlay.classList.add('active');
+  overlay.addEventListener('click', function handler(){
+    overlay.classList.remove('active');
+    const el = document.documentElement;
+    if(el.requestFullscreen) el.requestFullscreen();
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    overlay.removeEventListener('click', handler);
+  });
+  setTimeout(()=>{ overlay.classList.remove('active'); }, 5000);
+}
+
+/* ═══ CURSOR HIDE ═══ */
+let cursorTimer;
+document.addEventListener('mousemove',()=>{document.body.classList.remove('cursor-hidden');clearTimeout(cursorTimer);cursorTimer=setTimeout(()=>document.body.classList.add('cursor-hidden'),3000);});
+</script>
+</body>
+</html>
