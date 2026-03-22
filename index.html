@@ -876,7 +876,7 @@ function togglePause(){isPaused=!isPaused;document.getElementById('pauseBtn').in
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextSlide();else if(e.key==='ArrowLeft')prevSlide();else if(e.key===' '){e.preventDefault();togglePause();}});
 
 /* ═══ AUTO INIT — FOR OKC TV ═══ */
-const HARDCODED_GS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT2L5q2h5_qpmMd5q8bB2YqVnwADwWjlVasiQ6CuCvIzmMLXaXlLMhllPAzaa00ay7Bfh-MJ705SgZn/pub?output=xlsx';
+const HARDCODED_GS_URL = 'https://docs.google.com/spreadsheets/d/11Z_SX441GJQwAO9Jro41s_1s_5aGrYDjurWqBeQcNzo/export?format=xlsx';
 let isTvMode = false;
 (function(){
   const params = new URLSearchParams(location.search);
