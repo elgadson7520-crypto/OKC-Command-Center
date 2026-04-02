@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -526,20 +527,7 @@ setInterval(checkBreakSchedule,1000);
    title toggling, and periodic forced repaints to keep
    the Samsung Smart TV browser from sleeping.
    ═══════════════════════════════════════════════════════ */
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLock=await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release',()=>{
-        /* Immediately re-acquire on release */
-        setTimeout(requestWakeLock,500);
-      });
-    }
-  }catch(e){
-    /* Tizen may not support Wake Lock API — fallback layers handle it */
-    setTimeout(requestWakeLock,5000);
-  }
-}
+async function requestWakeLock(){try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>setTimeout(requestWakeLock,1000));}}catch(e){}}
 function startNoSleepVideo(){
   const v=document.getElementById('noSleepVideo');if(!v)return;
   const p=()=>v.play().catch(()=>{});
@@ -549,38 +537,9 @@ function startNoSleepVideo(){
   document.addEventListener('click',p);
   document.addEventListener('touchstart',p);
 }
-function startActivityPing(){
-  /* Toggle title + force repaint every 20s to prevent Samsung idle detection */
-  setInterval(()=>{
-    document.title=document.title.endsWith(' ')?document.title.trimEnd():document.title+' ';
-    /* Force a style recalc — Samsung Tizen uses this as activity signal */
-    document.body.style.opacity='0.999';
-    requestAnimationFrame(()=>{document.body.style.opacity='1';});
-  },20000);
-}
-/* Synthetic user-activity events to fool Samsung's inactivity timer */
-function startSyntheticActivity(){
-  setInterval(()=>{
-    /* Dispatch a synthetic mousemove — Samsung treats this as user activity */
-    window.dispatchEvent(new MouseEvent('mousemove',{clientX:Math.random()*10,clientY:Math.random()*10,bubbles:true}));
-    /* Also dispatch a synthetic keydown/keyup to cover keyboard-based idle checks */
-    window.dispatchEvent(new KeyboardEvent('keydown',{key:'',code:'',bubbles:true}));
-    window.dispatchEvent(new KeyboardEvent('keyup',{key:'',code:'',bubbles:true}));
-  },45000);
-}
-/* Canvas pixel write — some Samsung firmware checks for active rendering */
-let sleepCanvas=null;
-function startCanvasHeartbeat(){
-  sleepCanvas=document.createElement('canvas');
-  sleepCanvas.width=1;sleepCanvas.height=1;
-  sleepCanvas.style.cssText='position:fixed;top:-2px;left:-2px;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1';
-  document.body.appendChild(sleepCanvas);
-  const ctx=sleepCanvas.getContext('2d');
-  setInterval(()=>{
-    ctx.fillStyle=`rgba(${Math.random()*255|0},0,0,0.01)`;
-    ctx.fillRect(0,0,1,1);
-  },30000);
-}
+function startActivityPing(){setInterval(()=>{document.title=document.title.endsWith(' ')?document.title.trimEnd():document.title+' ';document.body.style.willChange='auto';requestAnimationFrame(()=>{document.body.style.willChange='';});},25000);}
+
+
 
 /* ═══ VISIBILITY + POWER RECOVERY ═══ */
 document.addEventListener('visibilitychange',()=>{
@@ -593,26 +552,13 @@ document.addEventListener('visibilitychange',()=>{
     }else if(parsedData&&gsUrl){
       refreshGS();
     }
-    /* Re-enter fullscreen on Samsung after power recovery */
-    setTimeout(()=>{
-      try{
-        const el=document.documentElement;
-        if(el.requestFullscreen)el.requestFullscreen();
-        else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
-      }catch(e){}
-    },1000);
+    
   }
 });
 document.addEventListener('contextmenu',e=>e.preventDefault());
 
 /* Master init for all sleep prevention layers */
-function initSleep(){
-  requestWakeLock();
-  startNoSleepVideo();
-  startActivityPing();
-  startSyntheticActivity();
-  startCanvasHeartbeat();
-}
+function initSleep(){requestWakeLock();startNoSleepVideo();startActivityPing();}
 
 /* ═══ AUTO-RECOVERY — Power Outage / Network Drop ═══ */
 let connectionRetries=0;const MAX_RETRIES=999,BASE_RETRY_MS=3000;
