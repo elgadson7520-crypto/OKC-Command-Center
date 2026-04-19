@@ -442,7 +442,7 @@ body.cursor-hidden{cursor:none}
   </div>
   <div class="slide-area" id="slideArea"></div>
   <div class="ftr">
-    <div class="ftr-targets"><div>DT: <span>&le;10%</span></div><div>Setup: <span>&le;25 min</span></div><div>Feeds/Run: <span>&ge;1000</span></div><div>Feeds/Sch: <span>&ge;800</span></div></div>
+    <div class="ftr-targets"><div>DT: <span>&le;15%</span></div><div>Setup: <span>&le;25 min</span></div><div>Feeds/Run: <span>&ge;1000</span></div><div>Feeds/Sch: <span>&ge;800</span></div></div>
     <div class="ftr-progress"><div class="progress-dots" id="progressDots"></div><div class="ftr-progress-bar"><div class="ftr-progress-fill" id="progressFill"></div></div></div>
     <div class="ftr-live" id="ftrLive" style="display:none"><div class="pulse"></div><span id="ftrLiveText">Live</span></div>
   </div>
@@ -451,7 +451,7 @@ body.cursor-hidden{cursor:none}
 
 <script>
 const LS_KEY='so_okc_pefs_url';
-const TARGETS={downtime:10,setup:25,feedsRunHr:1000,feedsSchHr:800};
+const TARGETS={downtime:15,setup:25,feedsRunHr:1000,feedsSchHr:800};
 const TIMING={machine:15000,motive:8000,summary:12000,deptScore:12000,shiftComp:12000,spotlight:12000,waterfall:14000};
 let gsUrl='',gsPollTimer=null,gsLastHash='',wakeLock=null,parsedData=null;
 let slides=[],curSlide=0,rotateTimer=null,progressTimer=null,isPaused=false;
