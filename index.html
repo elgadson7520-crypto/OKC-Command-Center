@@ -615,7 +615,7 @@ function processWorkbook(wb){
     const downtime=d.downtimePctNew||0,setup=d.minPerSetup||0,feedsRunHr=d.feedsRunHr||0,feedsSchHr=d.feedsSchHr||0;
     let status='good';
     if(downtime>TARGETS.downtime||setup>TARGETS.setup||feedsRunHr<TARGETS.feedsRunHr*0.85||feedsSchHr<TARGETS.feedsSchHr*0.85)status='warn';
-    if(downtime>15||setup>35||feedsRunHr<TARGETS.feedsRunHr*0.7||feedsSchHr<TARGETS.feedsSchHr*0.7)status='bad';
+    if(downtime>22.5||setup>35||feedsRunHr<TARGETS.feedsRunHr*0.7||feedsSchHr<TARGETS.feedsSchHr*0.7)status='bad';
     m.kpis={downtime:r1(downtime),setup:r1(setup),feedsRunHr:r1(feedsRunHr),feedsSchHr:r1(feedsSchHr),status,prodQty:d.prodQty||0,setups:d.setups||0};
     m.dept=dept.name;
   });});
@@ -714,7 +714,7 @@ function renderMachineSlide(s){
     const k=m.kpis;
     const statusLabel=k.status==='good'?'\u2713 ON TARGET':k.status==='warn'?'\u26A0 NEEDS FOCUS':'\u2716 OFF TARGET';
     const kpis=[
-      {label:'DOWNTIME',val:k.downtime+'%',cls:k.downtime<=TARGETS.downtime?'hit':k.downtime<=15?'miss-warn':'miss',vc:k.downtime<=TARGETS.downtime?'good':k.downtime<=15?'warn':'bad',tag:k.downtime<=TARGETS.downtime?'\u2713 \u226410%':'\u25B2 HIGH'},
+      {label:'DOWNTIME',val:k.downtime+'%',cls:k.downtime<=TARGETS.downtime?'hit':k.downtime<=22.5?'miss-warn':'miss',vc:k.downtime<=TARGETS.downtime?'good':k.downtime<=22.5?'warn':'bad',tag:k.downtime<=TARGETS.downtime?'\u2713 \u226415%':'\u25B2 HIGH'},
       {label:'SETUP (MIN)',val:k.setup,cls:k.setup<=TARGETS.setup?'hit':k.setup<=35?'miss-warn':'miss',vc:k.setup<=TARGETS.setup?'good':k.setup<=35?'warn':'bad',tag:k.setup<=TARGETS.setup?'\u2713 \u226425m':'\u25B2 HIGH'},
       {label:'FEEDS/RUN HR',val:Math.round(k.feedsRunHr),cls:k.feedsRunHr>=TARGETS.feedsRunHr?'hit':'miss',vc:k.feedsRunHr>=TARGETS.feedsRunHr?'good':'bad',tag:k.feedsRunHr>=TARGETS.feedsRunHr?'\u2713 \u22651000':'\u25BC LOW'},
       {label:'FEEDS/SCH HR',val:Math.round(k.feedsSchHr),cls:k.feedsSchHr>=TARGETS.feedsSchHr?'hit':'miss',vc:k.feedsSchHr>=TARGETS.feedsSchHr?'good':'bad',tag:k.feedsSchHr>=TARGETS.feedsSchHr?'\u2713 \u2265800':'\u25BC LOW'},
