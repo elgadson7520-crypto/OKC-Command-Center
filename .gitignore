@@ -1,0 +1,7 @@
+.vercel/
+node_modules/
+*.xlsx
+*.xls
+*.xlsm
+.DS_Store
+Thumbs.db

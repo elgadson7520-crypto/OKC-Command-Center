@@ -10,7 +10,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="refresh" content="600">
 <title>SupplyOne OKC — Weekly PEFS Command Center</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="/vendor/xlsx.full.min.js"></script>
+<script>if(typeof XLSX==='undefined'){document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></scr'+'ipt>');}</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -536,22 +537,37 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 document.addEventListener('contextmenu',e=>e.preventDefault());
 function initSleep(){requestWakeLock();startNoSleepVideo();startActivityPing();startMouseJiggle();}
 
+/* Swallow unhandled promise rejections (fullscreen/wakelock permission errors on non-Chrome browsers) so they don't spam the console */
+window.addEventListener('unhandledrejection',e=>{const m=e.reason&&(e.reason.message||String(e.reason))||'';if(/Permissions check failed|gesture|fullscreen|wakeLock/i.test(m))e.preventDefault();});
+
 /* ═══ AUTO-RECOVERY ═══ */
 let connectionRetries=0;const MAX_RETRIES=50,BASE_RETRY_MS=3000;
 async function connectWithRetry(){
-  const raw=document.getElementById('gsUrl').value.trim();if(!raw)return;
+  let raw=document.getElementById('gsUrl').value.trim();if(!raw)return;
   gsUrl=normalizeGsUrl(raw);showLoading('Connecting to PEFS Data...');
+  let fellBack=false;
   while(connectionRetries<MAX_RETRIES){
     try{
       const data=await fetchXlsx(gsUrl);processWorkbook(XLSX.read(data,{type:'array'}));
       localStorage.setItem(LS_KEY,raw);document.getElementById('ftrLive').style.display='flex';
       hideLoading();initSleep();connectionRetries=0;startGsPolling();
-      /* Auto fullscreen for X88 TV stick */
-      setTimeout(()=>{try{const el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();}catch(e){}},500);
+      /* Auto fullscreen for X88 TV stick \u2014 requires user gesture on most browsers; ignore rejection */
+      setTimeout(()=>{try{const el=document.documentElement;const fn=el.requestFullscreen||el.webkitRequestFullscreen;if(fn){const p=fn.call(el);if(p&&typeof p.catch==='function')p.catch(()=>{});}}catch(e){}},500);
       return;
     }catch(err){
-      connectionRetries++;const delay=Math.min(BASE_RETRY_MS*Math.pow(1.5,connectionRetries),60000);
-      document.getElementById('loadingText').textContent=`Connection failed \u2014 retrying in ${Math.round(delay/1000)}s (attempt ${connectionRetries}/${MAX_RETRIES})`;
+      connectionRetries++;
+      /* After 3 consecutive failures, if we're not already on the hardcoded URL, fall back to it (the saved URL is likely stale) */
+      if(!fellBack&&connectionRetries>=3&&raw!==HARDCODED_GS_URL){
+        fellBack=true;raw=HARDCODED_GS_URL;
+        document.getElementById('gsUrl').value=raw;
+        gsUrl=normalizeGsUrl(raw);
+        try{localStorage.removeItem(LS_KEY);}catch(e){}
+        document.getElementById('loadingText').textContent='Saved URL failed \u2014 using default source...';
+        await new Promise(r=>setTimeout(r,800));continue;
+      }
+      const delay=Math.min(BASE_RETRY_MS*Math.pow(1.5,connectionRetries),60000);
+      const errMsg=(err&&err.message)?err.message.slice(0,80):'unknown';
+      document.getElementById('loadingText').textContent=`Connection failed (${errMsg}) \u2014 retrying in ${Math.round(delay/1000)}s (attempt ${connectionRetries}/${MAX_RETRIES})`;
       await new Promise(r=>setTimeout(r,delay));document.getElementById('loadingText').textContent='Reconnecting to PEFS Data...';
     }
   }
@@ -567,13 +583,28 @@ function switchMode(mode){document.getElementById('tabSheets').classList.toggle(
 
 /* ═══ DATA FETCH ═══ */
 function normalizeGsUrl(raw){raw=raw.trim();if(raw.includes('/pub')&&raw.includes('output=xlsx'))return raw;const m=raw.match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=xlsx`;if(/^[a-zA-Z0-9_-]{20,}$/.test(raw))return`https://docs.google.com/spreadsheets/d/${raw}/export?format=xlsx`;return raw;}
+/* XHR-based binary fetch — works on every browser including old Tizen TVs where fetch() misbehaves on binary responses */
+function xhrArrayBuffer(url){return new Promise((resolve,reject)=>{try{const x=new XMLHttpRequest();x.open('GET',url,true);x.responseType='arraybuffer';x.timeout=20000;x.onload=()=>{if(x.status>=200&&x.status<300)resolve(x.response);else reject(new Error('HTTP '+x.status));};x.onerror=()=>reject(new Error('Network error'));x.ontimeout=()=>reject(new Error('Timeout'));x.send();}catch(e){reject(e);}});}
+async function fetchXlsxOne(u){
+  /* Try modern fetch first, fall back to XHR (older Tizen/WebKit). */
+  let buf;
+  if(typeof fetch==='function'){
+    try{const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);buf=await r.arrayBuffer();}catch(e){buf=await xhrArrayBuffer(u);}
+  }else{buf=await xhrArrayBuffer(u);}
+  const bytes=new Uint8Array(buf);
+  if(bytes.length<50||bytes[0]!==0x50||bytes[1]!==0x4B)throw new Error('Not xlsx');
+  return bytes;
+}
 async function fetchXlsx(url){
   /* cache-bust so proxies/Google never return stale snapshots */
   const bustedUrl=url+(url.includes('?')?'&':'?')+'_cb='+Date.now();
-  const proxies=[u=>u,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`];
+  const proxies=[u=>`/api/xlsx?url=${encodeURIComponent(u)}`,u=>u,u=>`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`];
   url=bustedUrl;
   let lastErr=null;
-  for(const mkUrl of proxies){try{const r=await fetch(mkUrl(url),{redirect:'follow'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const buf=new Uint8Array(await r.arrayBuffer());if(buf.length<50||buf[0]!==0x50||buf[1]!==0x4B)throw new Error('Not xlsx');return buf;}catch(e){lastErr=e;}}
+  for(let i=0;i<proxies.length;i++){
+    try{return await fetchXlsxOne(proxies[i](url));}
+    catch(e){lastErr=new Error('['+i+'] '+e.message);}
+  }
   throw lastErr||new Error('All fetch methods failed');
 }
 async function connectGoogleSheets(){const raw=document.getElementById('gsUrl').value.trim();if(!raw)return;gsUrl=normalizeGsUrl(raw);const btn=document.getElementById('gsConnectBtn'),st=document.getElementById('gsStatus');btn.disabled=true;btn.textContent='CONNECTING...';showLoading('Fetching PEFS...');try{const data=await fetchXlsx(gsUrl);processWorkbook(XLSX.read(data,{type:'array'}));localStorage.setItem(LS_KEY,raw);document.getElementById('savedTag').style.display='inline';st.style.display='flex';st.classList.remove('error');document.getElementById('gsStatusText').textContent='Connected';startGsPolling();document.getElementById('ftrLive').style.display='flex';hideLoading();initSleep();}catch(err){hideLoading();st.style.display='flex';st.classList.add('error');document.getElementById('gsStatusText').textContent='Failed \u2014 '+err.message;}btn.disabled=false;btn.textContent='CONNECT & GO LIVE';}
@@ -591,7 +622,7 @@ function cellNum(ws,r,c){const a=XLSX.utils.encode_cell({r:r-1,c:c-1});const cl=
 function cellStr(ws,r,c){const a=XLSX.utils.encode_cell({r:r-1,c:c-1});const cl=ws[a];return cl&&cl.v!=null?String(cl.v).trim():'';}
 function showLoading(m){document.getElementById('loadingText').textContent=m;document.getElementById('loadingOverlay').classList.add('active');}
 function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
-function goFullscreen(){const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el);requestWakeLock();}
+function goFullscreen(){try{const el=document.documentElement;const fn=el.requestFullscreen||el.webkitRequestFullscreen;if(fn){const p=fn.call(el);if(p&&typeof p.catch==='function')p.catch(()=>{});}}catch(e){}requestWakeLock();}
 function returnToConfig(){clearTimers();if(gsPollTimer)clearInterval(gsPollTimer);document.getElementById('dashboard').classList.remove('active');document.getElementById('uploadScreen').style.display='flex';}
 
 /* ═══ PARSE PEFS ═══ */
