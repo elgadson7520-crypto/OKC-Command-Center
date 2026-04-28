@@ -442,7 +442,7 @@ body.cursor-hidden{cursor:none}
   </div>
   <div class="slide-area" id="slideArea"></div>
   <div class="ftr">
-    <div class="ftr-targets"><div>DT: <span>&le;15%</span></div><div>Setup: <span>&le;25 min</span></div><div>Feeds/Run: <span>&ge;1000</span></div><div>Feeds/Sch: <span>&ge;800</span></div></div>
+    <div class="ftr-targets"><div>DT: <span>&le;16%</span></div><div>Setup: <span>&le;23.49 min</span></div><div>Feeds/Run: <span>&ge;2750</span></div><div>Feeds/Sch: <span>&ge;1783</span></div></div>
     <div class="ftr-progress"><div class="progress-dots" id="progressDots"></div><div class="ftr-progress-bar"><div class="ftr-progress-fill" id="progressFill"></div></div></div>
     <div class="ftr-live" id="ftrLive" style="display:none"><div class="pulse"></div><span id="ftrLiveText">Live</span></div>
   </div>
@@ -451,7 +451,7 @@ body.cursor-hidden{cursor:none}
 
 <script>
 const LS_KEY='so_okc_pefs_url';
-const TARGETS={downtime:15,setup:25,feedsRunHr:1000,feedsSchHr:800};
+const TARGETS={downtime:16,setup:23.49,feedsRunHr:2750,feedsSchHr:1783};
 const TIMING={machine:15000,motive:8000,summary:12000,deptScore:12000,shiftComp:12000,spotlight:12000,waterfall:14000};
 let gsUrl='',gsPollTimer=null,gsLastHash='',wakeLock=null,parsedData=null;
 let slides=[],curSlide=0,rotateTimer=null,progressTimer=null,isPaused=false;
@@ -615,7 +615,7 @@ function processWorkbook(wb){
     const downtime=d.downtimePctNew||0,setup=d.minPerSetup||0,feedsRunHr=d.feedsRunHr||0,feedsSchHr=d.feedsSchHr||0;
     let status='good';
     if(downtime>TARGETS.downtime||setup>TARGETS.setup||feedsRunHr<TARGETS.feedsRunHr*0.85||feedsSchHr<TARGETS.feedsSchHr*0.85)status='warn';
-    if(downtime>22.5||setup>35||feedsRunHr<TARGETS.feedsRunHr*0.7||feedsSchHr<TARGETS.feedsSchHr*0.7)status='bad';
+    if(downtime>24||setup>35||feedsRunHr<TARGETS.feedsRunHr*0.7||feedsSchHr<TARGETS.feedsSchHr*0.7)status='bad';
     m.kpis={downtime:r1(downtime),setup:r1(setup),feedsRunHr:r1(feedsRunHr),feedsSchHr:r1(feedsSchHr),status,prodQty:d.prodQty||0,setups:d.setups||0};
     m.dept=dept.name;
   });});
@@ -714,7 +714,7 @@ function renderMachineSlide(s){
     const k=m.kpis;
     const statusLabel=k.status==='good'?'\u2713 ON TARGET':k.status==='warn'?'\u26A0 NEEDS FOCUS':'\u2716 OFF TARGET';
     const kpis=[
-      {label:'DOWNTIME',val:k.downtime+'%',cls:k.downtime<=TARGETS.downtime?'hit':k.downtime<=22.5?'miss-warn':'miss',vc:k.downtime<=TARGETS.downtime?'good':k.downtime<=22.5?'warn':'bad',tag:k.downtime<=TARGETS.downtime?'\u2713 \u226415%':'\u25B2 HIGH'},
+      {label:'DOWNTIME',val:k.downtime+'%',cls:k.downtime<=TARGETS.downtime?'hit':k.downtime<=24?'miss-warn':'miss',vc:k.downtime<=TARGETS.downtime?'good':k.downtime<=24?'warn':'bad',tag:k.downtime<=TARGETS.downtime?'\u2713 \u226416%':'\u25B2 HIGH'},
       {label:'SETUP (MIN)',val:k.setup,cls:k.setup<=TARGETS.setup?'hit':k.setup<=35?'miss-warn':'miss',vc:k.setup<=TARGETS.setup?'good':k.setup<=35?'warn':'bad',tag:k.setup<=TARGETS.setup?'\u2713 \u226425m':'\u25B2 HIGH'},
       {label:'FEEDS/RUN HR',val:Math.round(k.feedsRunHr),cls:k.feedsRunHr>=TARGETS.feedsRunHr?'hit':'miss',vc:k.feedsRunHr>=TARGETS.feedsRunHr?'good':'bad',tag:k.feedsRunHr>=TARGETS.feedsRunHr?'\u2713 \u22651000':'\u25BC LOW'},
       {label:'FEEDS/SCH HR',val:Math.round(k.feedsSchHr),cls:k.feedsSchHr>=TARGETS.feedsSchHr?'hit':'miss',vc:k.feedsSchHr>=TARGETS.feedsSchHr?'good':'bad',tag:k.feedsSchHr>=TARGETS.feedsSchHr?'\u2713 \u2265800':'\u25BC LOW'},
@@ -836,9 +836,9 @@ function renderWaterfallSlide(){
       ${bars}
     </div>
     <div class="waterfall-legend">
-      <div class="wf-legend-item"><div class="wf-legend-swatch good"></div>\u226410% ON TARGET</div>
-      <div class="wf-legend-item"><div class="wf-legend-swatch warn"></div>10-15% CAUTION</div>
-      <div class="wf-legend-item"><div class="wf-legend-swatch bad"></div>&gt;15% CRITICAL</div>
+      <div class="wf-legend-item"><div class="wf-legend-swatch good"></div>\u226416% ON TARGET</div>
+      <div class="wf-legend-item"><div class="wf-legend-swatch warn"></div>16-24% CAUTION</div>
+      <div class="wf-legend-item"><div class="wf-legend-swatch bad"></div>&gt;24% CRITICAL</div>
     </div>
   </div>`;
 }
